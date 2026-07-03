@@ -28,8 +28,8 @@ export const milestones = [
   {
     id: 4,
     title: "Langkah Pertama",
-    date: "Akan datang",
-    description: "Sedang belajar berdiri dan siap melangkah! 👣",
+    date: "Oktober 2025",
+    description: "Yurin sudah pintar melangkah sendiri! Yeay! 👣",
     icon: Footprints,
     color: "bg-green-100",
   }
