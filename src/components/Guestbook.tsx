@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Send, Gift, X } from 'lucide-react';
+import { MessageCircle, Send, Gift, X, Loader2 } from 'lucide-react';
+
+// URL Backend API. Saat dideploy di VPS, Anda bisa mengatur environment variable atau URL langsung (misal: /api)
+// Jika di development lokal, kita akan tembak port 3001
+const API_URL = import.meta.env.PROD ? '/api' : 'http://localhost:3001/api';
 
 interface Message {
   id: string;
@@ -13,31 +17,62 @@ const Guestbook: React.FC = () => {
   const [name, setName] = useState('');
   const [text, setText] = useState('');
   const [showQris, setShowQris] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
 
+  // Ambil pesan dari server
   useEffect(() => {
-    const stored = localStorage.getItem('janayu_guestbook');
-    if (stored) {
-      setMessages(JSON.parse(stored));
-    }
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(`${API_URL}/messages`);
+        if (response.ok) {
+          const data = await response.json();
+          setMessages(data);
+        }
+      } catch (error) {
+        console.error('Gagal mengambil pesan:', error);
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchMessages();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text.trim()) return;
+    if (!text.trim() || isLoading) return;
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
+    setIsLoading(true);
+
+    const payload = {
       name: name.trim() || 'Tamu Rahasia',
       text: text.trim(),
       date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
     };
 
-    const updatedMessages = [newMessage, ...messages].slice(0, 10); // Keep last 10 messages
-    setMessages(updatedMessages);
-    localStorage.setItem('janayu_guestbook', JSON.stringify(updatedMessages));
-    
-    setName('');
-    setText('');
+    try {
+      const response = await fetch(`${API_URL}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const savedMessage = await response.json();
+        // Tambahkan pesan ke atas daftar
+        setMessages([savedMessage, ...messages]);
+        setName('');
+        setText('');
+      }
+    } catch (error) {
+      console.error('Gagal mengirim pesan:', error);
+      alert('Maaf, gagal mengirim pesan saat ini.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -85,9 +120,14 @@ const Guestbook: React.FC = () => {
               </div>
               <button 
                 type="submit"
-                className="w-full bg-pinkPrimary text-white font-bold py-3 rounded-xl anime-border flex items-center justify-center gap-2 hover:-translate-y-1 hover:shadow-[4px_4px_0_#1B2A4A] transition-all"
+                disabled={isLoading}
+                className={`w-full bg-pinkPrimary text-white font-bold py-3 rounded-xl anime-border flex items-center justify-center gap-2 transition-all ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:-translate-y-1 hover:shadow-[4px_4px_0_#1B2A4A]'}`}
               >
-                Kirim Pesan <Send size={20} />
+                {isLoading ? (
+                  <>Mengirim... <Loader2 size={20} className="animate-spin" /></>
+                ) : (
+                  <>Kirim Pesan <Send size={20} /></>
+                )}
               </button>
             </form>
 
@@ -109,7 +149,12 @@ const Guestbook: React.FC = () => {
             </h3>
             
             <div className="flex-1 bg-creamBg rounded-2xl anime-border-sm p-4 overflow-y-auto max-h-[400px] space-y-4">
-              {messages.length === 0 ? (
+              {isFetching ? (
+                <div className="h-full flex flex-col items-center justify-center text-navyOutline/50 p-8 text-center">
+                  <Loader2 size={32} className="animate-spin text-pinkPrimary mb-4" />
+                  <p className="font-nunito font-bold">Memuat pesan-pesan manis...</p>
+                </div>
+              ) : messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-navyOutline/50 p-8 text-center">
                   <span className="text-4xl mb-2">🌸</span>
                   <p className="font-nunito font-bold">Belum ada pesan. Jadilah yang pertama!</p>
