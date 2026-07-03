@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .anime-border {
+    border: 3px solid theme('colors.navyOutline');
+    box-shadow: 4px 4px 0 theme('colors.navyOutline');
+  }
+  
+  .anime-border-sm {
+    border: 2px solid theme('colors.navyOutline');
+    box-shadow: 2px 2px 0 theme('colors.navyOutline');
+  }
+
+  .anime-card-hover {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .anime-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 6px 6px 0 theme('colors.pinkHighlight');
+    border-color: theme('colors.pinkPrimary');
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
